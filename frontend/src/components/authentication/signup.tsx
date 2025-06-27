@@ -103,6 +103,8 @@ const Signup = () => {
         const message =
           error.response?.data?.error ||
           "Something went wrong. Please try again later.";
+
+          console.log(message);
           toast({
             title: "Error",
             description: message,

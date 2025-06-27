@@ -57,6 +57,7 @@ export const register = async (
       token: generateToken(user._id.toString(), user.username, user.email)
     });
   } catch (error) {
+    console.log(error);
     res.status(500).json({
       message: "Something went wrong",
       error: error instanceof Error ? error.message : error,

@@ -287,13 +287,13 @@ import {
         navigate('/login');
       } catch (error: any) {
         let errorMessage = 'Registration failed. Please try again.';
-  
+
         if (error.response?.data) {
           errorMessage = error.response.data.message || 'Registration failed';
         } else if (error.request) {
           errorMessage = 'Unable to connect to server. Check your connection.';
         } else {
-          errorMessage = error.message || 'An unexpected error occurred';
+          errorMessage = error.error || 'An unexpected error occurred';
         }
   
         toast({
