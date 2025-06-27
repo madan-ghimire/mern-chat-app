@@ -1,21 +1,30 @@
 import jwt from "jsonwebtoken";
-import { User } from "@/models/user";
-import { Request, Response, NextFunction } from "express";
+import { Request, Response, NextFunction } from 'express';
+import { Types } from 'mongoose';
+import User, { IUser } from '../models/userModel';
 
-interface AuthenticatedRequest extends Request {
-  user?: any;
+declare global {
+  namespace Express {
+    interface Request {
+      user?: IUser & { _id: Types.ObjectId };
+    }
+  }
+}
+
+export interface AuthenticatedRequest extends Request {
+  user: IUser;
 }
 
 export const authenticate = async (
-  req: AuthenticatedRequest,
+  req: Request,
   res: Response,
   next: NextFunction
 ) => {
   const authHeader = req.headers.authorization;
-  const token = authHeader?.split(" ")[1];
+  const token = authHeader?.split(' ')[1];
 
   if (!token) {
-    return res.status(401).json({ message: "No token provided" });
+    return res.status(401).json({ message: 'No token provided' });
   }
 
   try {
@@ -23,17 +32,15 @@ export const authenticate = async (
       userId: string;
     };
 
-    console.log("check decoded", decoded);
-
-    const user = await User.findById(decoded.userId).select("-password");
-
-    console.log("check user here", user);
+    const user = await User.findById(decoded.userId).select('-password');
 
     if (!user) {
-      return res.status(401).json({ message: "User not found" });
+      return res.status(401).json({ message: 'User not found' });
     }
 
-    req.user = user;
+    // Convert to plain object to avoid Mongoose document issues
+    const userObject = user.toObject();
+    (req as AuthenticatedRequest).user = userObject as IUser;
     next();
   } catch (err) {
     next(err);

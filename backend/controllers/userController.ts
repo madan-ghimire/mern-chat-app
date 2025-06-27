@@ -1,4 +1,4 @@
-import { User } from "@/models/user";
+import User from "../models/userModel";
 import { NextFunction, Request, Response } from "express";
 
 interface AuthenticatedRequest extends Request {

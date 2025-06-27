@@ -1,4 +1,17 @@
-import { Button, Field, HStack, Input, VStack } from "@chakra-ui/react";
+import {
+  Button,
+  FormControl,
+  FormLabel,
+  FormErrorMessage,
+  Input,
+  InputGroup,
+  InputRightElement,
+  Stack,
+  VStack,
+  Image,
+  Box,
+  useToast,
+} from "@chakra-ui/react";
 import { useForm } from "react-hook-form";
 import type { SubmitHandler } from "react-hook-form";
 import { z } from "zod";
@@ -6,8 +19,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import axiosClient from "@/utils/axios-clients";
-
-import { toast } from "react-toastify";
 import axios from "axios";
 
 const signupSchema = z
@@ -77,18 +88,40 @@ const Signup = () => {
         },
       });
 
-      toast.success(response.data.message);
-      reset();
+      toast({
+        title: "Success",
+        description: response.data.message,
+        status: "success",
+        duration: 5000,
+        isClosable: true,
+        position: 'bottom-right'
+      });    
+        reset();
       console.log(response);
     } catch (error) {
       if (axios.isAxiosError(error)) {
         const message =
           error.response?.data?.error ||
           "Something went wrong. Please try again later.";
-        toast.error(`${message}`);
-        console.error("Server Error:", error.response);
+
+          console.log(message);
+          toast({
+            title: "Error",
+            description: message,
+            status: "error",
+            duration: 5000,
+            isClosable: true,
+            position: 'bottom-right'
+          });     
       } else {
-        toast.error("❌ Unexpected error occurred");
+        toast({
+          title: "Error",
+          description: "Unexpected error occurred",
+          status: "error",
+          duration: 5000,
+          isClosable: true,
+          position: 'bottom-right'
+        });        
         console.error("Unexpected Error:", error);
       }
     } finally {
@@ -96,121 +129,115 @@ const Signup = () => {
     }
   };
 
+  const toast = useToast();
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)}>
-      <VStack spaceY={4} align="stretch">
-        <HStack spaceX={4} align="start" width="100%">
-          <Field.Root invalid={!!errors.firstName}>
-            <Field.Label>First Name</Field.Label>
+    <Box as="form" onSubmit={handleSubmit(onSubmit)}>
+      <VStack spacing={4} align="stretch">
+        <Stack direction={{ base: 'column', md: 'row' }} spacing={4}>
+          <FormControl isInvalid={!!errors.firstName}>
+            <FormLabel>First Name</FormLabel>
             <Input placeholder="First name" {...register("firstName")} />
-            <Field.ErrorText>{errors.firstName?.message}</Field.ErrorText>
-          </Field.Root>
+            <FormErrorMessage>{errors.firstName?.message}</FormErrorMessage>
+          </FormControl>
 
-          <Field.Root invalid={!!errors.lastName}>
-            <Field.Label>Last Name</Field.Label>
+          <FormControl isInvalid={!!errors.lastName}>
+            <FormLabel>Last Name</FormLabel>
             <Input placeholder="Last name" {...register("lastName")} />
-            <Field.ErrorText>{errors.lastName?.message}</Field.ErrorText>
-          </Field.Root>
-        </HStack>
-        <HStack spaceX={4} align="start" width="100%">
-          <Field.Root invalid={!!errors.username}>
-            <Field.Label>Username</Field.Label>
-            <Input placeholder="Username" {...register("username")} />
-            <Field.ErrorText>{errors.username?.message}</Field.ErrorText>
-          </Field.Root>
-          <Field.Root invalid={!!errors.email}>
-            <Field.Label>Email</Field.Label>
-            <Input placeholder="Email" {...register("email")} />
-            <Field.ErrorText>{errors.email?.message}</Field.ErrorText>
-          </Field.Root>
-        </HStack>
+            <FormErrorMessage>{errors.lastName?.message}</FormErrorMessage>
+          </FormControl>
+        </Stack>
 
-        <HStack spaceX={4} align="start" width="100%">
-          <Field.Root flex={1} invalid={!!errors.password}>
-            <Field.Label>Password</Field.Label>
-            <div style={{ position: "relative" }}>
+        <Stack direction={{ base: 'column', md: 'row' }} spacing={4}>
+          <FormControl isInvalid={!!errors.username}>
+            <FormLabel>Username</FormLabel>
+            <Input placeholder="Username" {...register("username")} />
+            <FormErrorMessage>{errors.username?.message}</FormErrorMessage>
+          </FormControl>
+          
+          <FormControl isInvalid={!!errors.email}>
+            <FormLabel>Email</FormLabel>
+            <Input type="email" placeholder="Email" {...register("email")} />
+            <FormErrorMessage>{errors.email?.message}</FormErrorMessage>
+          </FormControl>
+        </Stack>
+
+        <Stack direction={{ base: 'column', md: 'row' }} spacing={4}>
+          <FormControl isInvalid={!!errors.password} flex={1}>
+            <FormLabel>Password</FormLabel>
+            <InputGroup>
               <Input
-                pr="2.5rem"
+                pr="4.5rem"
                 type={showPassword ? "text" : "password"}
                 placeholder="Password"
                 {...register("password")}
               />
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowPassword((prev) => !prev)}
-                style={{
-                  position: "absolute",
-                  top: "50%",
-                  right: "10px",
-                  transform: "translateY(-50%)",
-                }}
-                tabIndex={-1}
-              >
-                {showPassword ? <FiEyeOff /> : <FiEye />}
-              </Button>
-            </div>
-            <Field.ErrorText>{errors.password?.message}</Field.ErrorText>
-          </Field.Root>
+              <InputRightElement width="4.5rem">
+                <Button
+                  h="1.75rem"
+                  size="sm"
+                  onClick={() => setShowPassword(!showPassword)}
+                  variant="ghost"
+                >
+                  {showPassword ? <FiEyeOff /> : <FiEye />}
+                </Button>
+              </InputRightElement>
+            </InputGroup>
+            <FormErrorMessage>{errors.password?.message}</FormErrorMessage>
+          </FormControl>
 
-          <Field.Root flex={1} invalid={!!errors.confirmPassword}>
-            <Field.Label>Confirm Password</Field.Label>
-            <div style={{ position: "relative" }}>
+          <FormControl isInvalid={!!errors.confirmPassword} flex={1}>
+            <FormLabel>Confirm Password</FormLabel>
+            <InputGroup>
               <Input
-                pr="2.5rem"
+                pr="4.5rem"
                 type={showConfirmPassword ? "text" : "password"}
                 placeholder="Confirm Password"
                 {...register("confirmPassword")}
               />
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowConfirmPassword((prev) => !prev)}
-                style={{
-                  position: "absolute",
-                  top: "50%",
-                  right: "10px",
-                  transform: "translateY(-50%)",
-                }}
-                tabIndex={-1}
-              >
-                {showConfirmPassword ? <FiEyeOff /> : <FiEye />}
-              </Button>
-            </div>
-            <Field.ErrorText>{errors.confirmPassword?.message}</Field.ErrorText>
-          </Field.Root>
-        </HStack>
-        {/* Profile Pic Upload */}
-        <Field.Root invalid={!!errors.pic}>
-          <Field.Label>Profile Picture (optional)</Field.Label>
+              <InputRightElement width="4.5rem">
+                <Button
+                  h="1.75rem"
+                  size="sm"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  variant="ghost"
+                >
+                  {showConfirmPassword ? <FiEyeOff /> : <FiEye />}
+                </Button>
+              </InputRightElement>
+            </InputGroup>
+            <FormErrorMessage>{errors.confirmPassword?.message}</FormErrorMessage>
+          </FormControl>
+        </Stack>
+
+        <FormControl isInvalid={!!errors.pic}>
+          <FormLabel>Profile Picture (optional)</FormLabel>
           <Input
             type="file"
             accept="image/*"
             onChange={handleFileChange}
             p={1.5}
+            variant="unstyled"
           />
-          <Field.ErrorText>{errors.pic?.message}</Field.ErrorText>
-        </Field.Root>
-        {/* Image Preview */}
+          <FormErrorMessage>{errors.pic?.message}</FormErrorMessage>
+        </FormControl>
+
         {preview && (
-          <img
+          <Image
             src={preview}
-            alt="Preview"
-            style={{
-              width: "100px",
-              height: "100px",
-              objectFit: "cover",
-              borderRadius: "8px",
-            }}
+            alt="Profile preview"
+            boxSize="100px"
+            objectFit="cover"
+            borderRadius="md"
+            alignSelf="flex-start"
           />
         )}
-        <Button type="submit" loading={loading}>
-          Submit
+
+        <Button type="submit" colorScheme="blue" isLoading={loading} mt={4}>
+          Sign Up
         </Button>
       </VStack>
-    </form>
+    </Box>
   );
 };
 

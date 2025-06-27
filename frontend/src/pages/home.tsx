@@ -1,16 +1,15 @@
 import { useState } from "react";
-import { Container, Box, Text, Tabs } from "@chakra-ui/react";
+import { Container, Box, Text, Tabs, TabList, Tab, TabPanels, TabPanel } from "@chakra-ui/react";
 import { LuUser, LuLogIn } from "react-icons/lu";
 import Login from "@/components/authentication/login";
 import Signup from "@/components/authentication/signup";
 
 const Home = () => {
-  const [tabValue, setTabValue] = useState("login");
+  const [tabIndex, setTabIndex] = useState(0);
 
   return (
     <Container maxW="xl" centerContent>
       <Box
-        d="flex"
         justifyContent="center"
         p={3}
         bg="white"
@@ -29,31 +28,27 @@ const Home = () => {
         </Text>
       </Box>
       <Box bg="white" w="100%" p={4} borderRadius="lg" borderWidth="1px">
-        <Tabs.Root
-          value={tabValue}
-          onValueChange={(details) => setTabValue(details.value)}
-          variant="plain"
-          fitted
-        >
-          <Tabs.List bg="bg.muted" rounded="l3" p="1">
-            <Tabs.Trigger value="login">
+        <Tabs index={tabIndex} onChange={setTabIndex} variant="enclosed">
+          <TabList>
+            <Tab>
               <LuLogIn />
               Login
-            </Tabs.Trigger>
-            <Tabs.Trigger value="signup">
+            </Tab>
+            <Tab>
               <LuUser />
               Sign Up
-            </Tabs.Trigger>
-            <Tabs.Indicator rounded="l2" />
-          </Tabs.List>
+            </Tab>
+          </TabList>
 
-          <Tabs.Content value="login">
-            <Login />
-          </Tabs.Content>
-          <Tabs.Content value="signup">
-            <Signup />
-          </Tabs.Content>
-        </Tabs.Root>
+          <TabPanels>
+            <TabPanel>
+              <Login />
+            </TabPanel>
+            <TabPanel>
+              <Signup />
+            </TabPanel>
+          </TabPanels>
+        </Tabs>
       </Box>
     </Container>
   );
