@@ -1,10 +1,8 @@
 import { NextFunction, Request, Response } from "express";
 import { loginSchema, registerSchema } from "@/schemas/auth.schema";
-import { ZodError } from "zod";
-import { User } from "@/models/user";
+import User from "../models/userModel";
 import { generateToken } from "@/utils/jwt";
-import { hashPassword } from "@/utils/hast";
-import bcrypt from "bcrypt";
+
 import { AppError } from "@/domain/errors/AppError";
 
 export const register = async (
@@ -25,8 +23,7 @@ export const register = async (
     const { firstName, lastName, email, username, password, pic } =
       validationResult.data;
 
-    const hashed = await hashPassword(password);
-
+    console.log('Original password during registration:', password);
     const displayName = `${firstName} ${lastName}`;
 
     const userExists = await User.findOne({ email });
@@ -39,24 +36,25 @@ export const register = async (
       firstName,
       lastName,
       email,
-      password: hashed,
-      username,
+      password, 
       displayName,
-      pic,
+      username,
+      pic: pic || 'https://icon-library.com/images/anonymous-avatar-icon/anonymous-avatar-icon-25.jpg',
+      isAdmin: false
     });
 
     return res.status(201).json({
       message: "Registered successfully",
-      data: {
-        id: user._id,
+      user: {
+        _id: user._id,
         firstName: user.firstName,
         lastName: user.lastName,
-        email: user.email,
         username: user.username,
-        displayName: user.displayName,
+        email: user.email,
         pic: user.pic,
-        token: generateToken(user._id as string),
+        isAdmin: user.isAdmin,
       },
+      token: generateToken(user._id.toString(), user.username, user.email)
     });
   } catch (error) {
     res.status(500).json({
@@ -77,6 +75,7 @@ export const login = async (req: Request, res: Response) => {
       });
     }
 
+
     const { email, password } = validationResult.data;
 
     const user = await User.findOne({ email });
@@ -85,10 +84,16 @@ export const login = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Invalid user credentials" });
     }
 
-    const isPasswordCorrect = await bcrypt.compare(
-      password,
-      String(user.password)
-    );
+    console.log("check user", user)
+
+    console.log('Password from login request:', password);
+    console.log('Stored hashed password:', user.password);
+    
+    // Use the matchPassword method from the user model
+    const isPasswordCorrect = await user.matchPassword(password);
+    
+    console.log('Password match result:', isPasswordCorrect);
+    
     if (!isPasswordCorrect) {
       return res.status(400).json({ message: "Invalid email or password" });
     }
@@ -96,8 +101,8 @@ export const login = async (req: Request, res: Response) => {
     return res.status(200).json({
       message: "Login successful",
       data: {
-        email: user.email,
-        token: generateToken(user._id as string),
+        isAdmin: user.isAdmin,
+        token: generateToken(user._id.toString(), user.username, user.email)
       },
     });
   } catch (error) {

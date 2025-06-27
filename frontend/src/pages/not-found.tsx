@@ -1,30 +1,48 @@
-import { Box, Heading, Text, VStack } from "@chakra-ui/react";
+import {
+  Box,
+  Button,
+  Flex,
+  Heading,
+  Text,
+  VStack,
+} from "@chakra-ui/react";
+import { Link as RouterLink } from "react-router-dom";
 
 const NotFound = () => {
   return (
-    <Box
-      position="fixed"
-      top={0}
-      left={0}
-      width="100vw"
+    <Flex
       height="100vh"
-      display="flex"
-      alignItems="center"
-      justifyContent="center"
-      px={4}
-      textAlign="center"
-      bg="white" // or gray.50 if you prefer
-      zIndex={9999}
+      width="100%"
+      align="center"
+      justify="center"
+      bg="gray.50"
+      px={6}
     >
-      <VStack spaceY={6}>
-        <Heading as="h1" size="4xl" color="red.500">
-          404
-        </Heading>
-        <Text fontSize={{ base: "lg", md: "2xl" }} color="gray.600">
-          Page Not Found
-        </Text>
-      </VStack>
-    </Box>
+      <Box textAlign="center">
+        <VStack spacing={4}>
+          <Heading
+            as="h1"
+            size="4xl"
+            fontWeight="bold"
+            color="red.500"
+          >
+            404
+          </Heading>
+          <Text fontSize={{ base: "md", md: "lg" }} color="gray.600">
+            Sorry, the page you’re looking for doesn’t exist.
+          </Text>
+          <Button
+            as={RouterLink}
+            to="/"
+            colorScheme="blue"
+            size="md"
+            mt={2}
+          >
+            Go to Home
+          </Button>
+        </VStack>
+      </Box>
+    </Flex>
   );
 };
 
