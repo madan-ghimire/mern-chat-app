@@ -1,3 +1,19 @@
+
+## setup instructions
+
+- First clone the project mern-chat-app
+- then switch to `dev` branch
+- then head over to `mern-chat-app>` directory then first run `pnpm install`
+- then after successfully install then run `pnpm run dev`
+- make sure backend is running on `http://localhost:5000/`
+- make sure swagger docs is running on `http://localhost:5000/api-docs/#/`
+- after successfully running backend.
+- go to directory `\mern-chat-app\frontend>`
+- then run `pnpm install` finally run 'pnpm run dev`.
+- make sure `.env.local.example` is on the root directory of backend.
+- make sure project is running as `signin` `signup` page.
+- make sure add `MONGO_URI` either use compass as local database or you can use atlast cloud database.
+
 ## Screencast 
 https://github.com/user-attachments/assets/438d5f8b-72af-450f-abef-2bc35a34e90d
 
@@ -12,3 +28,6 @@ https://github.com/user-attachments/assets/438d5f8b-72af-450f-abef-2bc35a34e90d
 ## chat page
 
 ![Screenshot 2025-06-27 080139](https://github.com/user-attachments/assets/1e4eb58c-f6df-4b43-8db2-9f17c2f419aa)
+
+
+  
