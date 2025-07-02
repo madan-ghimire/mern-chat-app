@@ -52,7 +52,7 @@ export class SocketManager {
       console.log('New client connected:', socket.id);
 
       // Handle user authentication
-      socket.on('authenticate', (userId: string) => {
+      socket.on('authenticate', async (userId: string) => {
         if (!userId) return;
         
         // Store socket ID for quick lookup
@@ -68,18 +68,48 @@ export class SocketManager {
         
         // Join a room for this user
         socket.join(userId);
-        
-        // Notify others about user online status
-        socket.broadcast.emit('user-status', { 
-          userId, 
-          status: 'online' 
+
+        // Join all chat rooms for this user
+        const Chat = require('../models/chatModel').default || require('../models/chatModel');
+        const userChats = await Chat.find({ users: userId });
+        userChats.forEach((chat: any) => {
+          socket.join(chat._id.toString());
         });
+
+        // Notify others about user online status
+        console.log('Emitting user-online:', userId);
+        socket.broadcast.emit('user-online', userId);
+
+        // Emit the list of currently online users to this user
+        console.log('Emitting online-users:', Array.from(this.connectedUsers.keys()));
+        socket.emit('online-users', Array.from(this.connectedUsers.keys()));
+      });
+
+      // Handle send-message from frontend
+      socket.on('send-message', (data) => {
+        // data: { to, content, messageId, from }
+        const { to, content, messageId, from } = data;
+        console.log('check send message', data);
+        // Construct message object (add more fields as needed)
+        const messageForEmit = {
+          _id: messageId,
+          sender: from,
+          content,
+          chat: { _id: from + '-' + to, users: [from, to] },
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
+        console.log('Emitting new-message:', messageForEmit);
+        // Emit to recipient and sender
+        this.io.to(to).emit('new-message', messageForEmit);
+        this.io.to(from).emit('new-message', messageForEmit);
+        // Optionally: Save message to DB here
       });
 
       // Handle typing indicator
-      socket.on('typing', (data: { chatId: string; userId: string }) => {
-        const { chatId, userId } = data;
-        socket.to(chatId).emit('typing', { chatId, userId });
+      socket.on('typing', (data: { to: string; from: string; isTyping: boolean }) => {
+        // Forward typing event to the recipient
+        this.io.to(data.to).emit('typing', { from: data.from, isTyping: data.isTyping });
       });
 
       // Handle stop typing
@@ -94,6 +124,12 @@ export class SocketManager {
         this.markMessageAsRead(messageId, chatId, userId);
       });
 
+      // Handle get-online-users event
+      socket.on('get-online-users', () => {
+        console.log('Emitting online-users:', Array.from(this.connectedUsers.keys()));
+        socket.emit('online-users', Array.from(this.connectedUsers.keys()));
+      });
+
       // Handle disconnect
       socket.on('disconnect', () => {
         // Find and remove this socket from userSockets
@@ -104,10 +140,8 @@ export class SocketManager {
             // No more sockets for this user, they're offline
             this.connectedUsers.delete(userId);
             this.userSockets.delete(userId);
-            this.io.emit('user-status', { 
-              userId, 
-              status: 'offline' 
-            });
+            console.log('Emitting user-offline:', userId);
+            this.io.emit('user-offline', userId);
           } else {
             this.userSockets.set(userId, updatedSockets);
           }
