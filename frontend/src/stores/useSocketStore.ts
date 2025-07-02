@@ -1,5 +1,5 @@
-import { create } from 'zustand';
-import { io, type Socket } from 'socket.io-client';
+import { create } from "zustand";
+import { io, type Socket } from "socket.io-client";
 
 type Timeout = ReturnType<typeof setTimeout>;
 
@@ -29,12 +29,14 @@ interface SocketState {
   disconnect: () => void;
   sendMessage: (data: MessageData) => void;
   markAsRead: (messageId: string) => void;
-  setTyping: (data: { to: string; isTyping: boolean }) => void;
-  onTyping: (callback: (data: TypingData) => void) => (() => void);
-  onMessage: (callback: (message: any) => void) => (() => void);
-  onMessageRead: (callback: (data: { messageId: string }) => void) => (() => void);
-  onUserOnline: (callback: (userId: string) => void) => (() => void);
-  onUserOffline: (callback: (userId: string) => void) => (() => void);
+  setTyping: (data: { to: string; from: string; isTyping: boolean }) => void;
+  onTyping: (callback: (data: TypingData) => void) => () => void;
+  onMessage: (callback: (message: any) => void) => () => void;
+  onMessageRead: (
+    callback: (data: { messageId: string }) => void
+  ) => () => void;
+  onUserOnline: (callback: (userId: string) => void) => () => void;
+  onUserOffline: (callback: (userId: string) => void) => () => void;
   getUserPresence: (userId: string) => UserPresence | undefined;
 }
 
@@ -54,40 +56,42 @@ const useSocketStore = create<SocketState>((set, get) => {
     }
 
     // Initialize new socket connection
-    const newSocket = io('http://localhost:5000', {
+    const newSocket = io("http://localhost:5000", {
       auth: { token },
       autoConnect: true,
       reconnection: true,
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
-      transports: ['websocket'],
+      transports: ["websocket"],
       upgrade: false,
-      forceNew: true
+      forceNew: true,
     });
 
     // Store the socket instance
     socket = newSocket;
-    
+
     // Handle connect
     const onConnect = () => {
-      console.log('Connected to socket server');
+      console.log("Connected to socket server");
       set({ isConnected: true, socket: newSocket });
-      newSocket.emit('authenticate', userId);
+      newSocket.emit("authenticate", userId);
+      // Request the list of online users after authenticating
+      newSocket.emit("get-online-users");
     };
 
     // Handle disconnect
     const onDisconnect = () => {
-      console.log('Disconnected from socket server');
+      console.log("Disconnected from socket server");
       set({ isConnected: false });
     };
 
     // Handle user online status
     const onUserOnline = (userId: string) => {
-      console.log('User online:', userId);
-      set(state => {
+      console.log("User online:", userId);
+      set((state) => {
         // Skip if already marked as online
         if (state.onlineUsers.includes(userId)) return state;
-        
+
         return {
           onlineUsers: [...state.onlineUsers, userId],
           userPresence: {
@@ -95,117 +99,124 @@ const useSocketStore = create<SocketState>((set, get) => {
             [userId]: {
               ...state.userPresence[userId],
               userId,
-              isOnline: true
-            }
-          }
+              isOnline: true,
+            },
+          },
         };
       });
-      userOnlineHandlers.forEach(handler => handler(userId));
+      userOnlineHandlers.forEach((handler) => handler(userId));
     };
 
     // Handle user offline status with debounce
     const offlineTimeouts = new Map<string, Timeout>();
     const onUserOffline = (userId: string) => {
-      console.log('User offline event received:', userId);
+      console.log("User offline event received:", userId);
       if (offlineTimeouts.has(userId)) {
         clearTimeout(offlineTimeouts.get(userId));
       }
-      
+
       const timeoutId = setTimeout(() => {
-        console.log('Marking user as offline:', userId);
-        set(state => {
+        console.log("Marking user as offline:", userId);
+        set((state) => {
           return {
-            onlineUsers: state.onlineUsers.filter(id => id !== userId),
+            onlineUsers: state.onlineUsers.filter((id) => id !== userId),
             userPresence: {
               ...state.userPresence,
               [userId]: {
                 ...state.userPresence[userId],
                 isOnline: false,
-                isTyping: false
-              }
-            }
+                isTyping: false,
+              },
+            },
           };
         });
         offlineTimeouts.delete(userId);
-        userOfflineHandlers.forEach(handler => handler(userId));
+        userOfflineHandlers.forEach((handler) => handler(userId));
       }, 3000); // 3 second delay before marking as offline
-      
+
       offlineTimeouts.set(userId, timeoutId);
     };
 
     // Set up event listeners
-    newSocket.on('connect', onConnect);
-    newSocket.on('disconnect', onDisconnect);
-    newSocket.on('user-online', onUserOnline);
-    newSocket.on('user-offline', onUserOffline);
-    newSocket.on('message', (message: any) => {
-      messageHandlers.forEach(handler => handler(message));
+    newSocket.on("connect", onConnect);
+    newSocket.on("disconnect", onDisconnect);
+    newSocket.on("user-online", (userId: string) => {
+      console.log("Received user-online:", userId);
+      onUserOnline(userId);
     });
-    newSocket.on('typing', (data: TypingData) => {
+    newSocket.on("user-offline", (userId: string) => {
+      console.log("Received user-offline:", userId);
+      onUserOffline(userId);
+    });
+    newSocket.on("new-message", (message: any) => {
+      console.log("Received new-message:", message);
+      messageHandlers.forEach((handler) => handler(message));
+    });
+    newSocket.on("typing", (data: TypingData) => {
+      console.log("Received typing:", data);
       if (data.isTyping) {
-        set(state => ({
+        set((state) => ({
           userPresence: {
             ...state.userPresence,
             [data.from]: {
               ...state.userPresence[data.from],
               isTyping: true,
-              lastActive: new Date()
-            }
-          }
+              lastActive: new Date(),
+            },
+          },
         }));
-        
-        // Clear typing status after 3 seconds
         setTimeout(() => {
-          set(state => ({
+          set((state) => ({
             userPresence: {
               ...state.userPresence,
               [data.from]: {
                 ...state.userPresence[data.from],
-                isTyping: false
-              }
-            }
+                isTyping: false,
+              },
+            },
           }));
         }, 3000);
       }
-      
-      typingHandlers.forEach(handler => handler(data));
+      typingHandlers.forEach((handler) => handler(data));
     });
-    newSocket.on('message-read', (data: { messageId: string }) => {
-      messageReadHandlers.forEach(handler => handler(data));
+    newSocket.on("message-read", (data: { messageId: string }) => {
+      console.log("Received message-read:", data);
+      messageReadHandlers.forEach((handler) => handler(data));
     });
-    newSocket.on('online-users', (users: string[]) => {
+    newSocket.on("online-users", (users: string[]) => {
+      console.log("Received online-users:", users);
       set({ onlineUsers: [...new Set(users)] });
     });
-    newSocket.on('reconnect', () => {
-      newSocket.emit('get-online-users');
-      newSocket.emit('authenticate', userId);
+    newSocket.on("reconnect", () => {
+      newSocket.emit("get-online-users");
+      newSocket.emit("authenticate", userId);
     });
 
     // Handle visibility changes
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && !newSocket.connected) {
+      if (document.visibilityState === "visible" && !newSocket.connected) {
         newSocket.connect();
       }
     };
-    
-    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     // Cleanup function
     return () => {
       // Remove event listeners
-      newSocket.off('connect', onConnect);
-      newSocket.off('disconnect', onDisconnect);
-      newSocket.off('user-online', onUserOnline);
-      newSocket.off('user-offline', onUserOffline);
-      newSocket.off('reconnect');
-      
+      newSocket.off("connect", onConnect);
+      newSocket.off("disconnect", onDisconnect);
+      newSocket.off("user-online");
+      newSocket.off("user-offline");
+      newSocket.off("reconnect");
+
       // Clear timeouts
       offlineTimeouts.forEach(clearTimeout);
       offlineTimeouts.clear();
-      
+
       // Remove visibility change listener
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+
       // Disconnect the socket if it's still active
       if (newSocket.connected) {
         newSocket.disconnect();
@@ -220,11 +231,13 @@ const useSocketStore = create<SocketState>((set, get) => {
     userPresence: {},
     getUserPresence: (userId: string) => {
       const state = get();
-      return state.userPresence[userId] || {
-        userId,
-        isOnline: false,
-        isTyping: false
-      };
+      return (
+        state.userPresence[userId] || {
+          userId,
+          isOnline: false,
+          isTyping: false,
+        }
+      );
     },
     connect: (userId: string, token: string) => {
       // Initialize socket and return cleanup function
@@ -239,19 +252,19 @@ const useSocketStore = create<SocketState>((set, get) => {
     },
     sendMessage: (data: MessageData) => {
       if (socket) {
-        socket.emit('send-message', data);
+        socket.emit("send-message", data);
       } else {
-        console.error('Socket is not connected');
+        console.error("Socket is not connected");
       }
     },
     markAsRead: (messageId: string) => {
       if (socket) {
-        socket.emit('mark-as-read', { messageId });
+        socket.emit("mark-as-read", { messageId });
       }
     },
-    setTyping: (data: { to: string; isTyping: boolean }) => {
+    setTyping: (data: { to: string; from: string; isTyping: boolean }) => {
       if (socket) {
-        socket.emit('typing', data);
+        socket.emit("typing", data);
       }
     },
     onMessage: (callback: (message: any) => void) => {

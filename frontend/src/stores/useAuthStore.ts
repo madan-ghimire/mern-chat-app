@@ -1,7 +1,7 @@
-import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import { User } from '../types';
-import useSocketStore from './useSocketStore';
+import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
+import { User } from "../types";
+import useSocketStore from "./useSocketStore";
 
 export interface AuthState {
   user: User | null;
@@ -26,13 +26,13 @@ const useAuthStore = create<AuthState>()(
         try {
           set({ isLoading: true });
           // Store the token in localStorage
-          localStorage.setItem('token', token);
+          localStorage.setItem("token", token);
           // Update the state
           set({ user, token, isAuthenticated: true, isLoading: false });
           // Initialize socket connection after login
           useSocketStore.getState().connect(user._id, token);
         } catch (error) {
-          console.error('Login error:', error);
+          console.error("Login error:", error);
           set({ isLoading: false });
           throw error;
         }
@@ -43,11 +43,16 @@ const useAuthStore = create<AuthState>()(
           // Disconnect socket before logout
           useSocketStore.getState().disconnect();
           // Remove token from localStorage
-          localStorage.removeItem('token');
+          localStorage.removeItem("token");
           // Reset state
-          set({ user: null, token: null, isAuthenticated: false, isLoading: false });
+          set({
+            user: null,
+            token: null,
+            isAuthenticated: false,
+            isLoading: false,
+          });
         } catch (error) {
-          console.error('Logout error:', error);
+          console.error("Logout error:", error);
           throw error;
         }
       },
@@ -60,7 +65,7 @@ const useAuthStore = create<AuthState>()(
       setLoading: (loading) => set({ isLoading: loading }),
     }),
     {
-      name: 'auth-storage', // name of the item in the storage (must be unique)
+      name: "auth-storage", // name of the item in the storage (must be unique)
       storage: createJSONStorage(() => localStorage), // (optional) by default, 'localStorage' is used
       partialize: (state) => ({
         user: state.user,

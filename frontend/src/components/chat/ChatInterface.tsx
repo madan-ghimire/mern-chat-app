@@ -86,8 +86,20 @@ const ChatInterface = ({ recipient }: ChatInterfaceProps) => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages]);
 
+  // Register socket new-message handler to update chat in real time
+  useEffect(() => {
+    const unsubscribe = useSocketStore.getState().onMessage((message: any) => {
+      useChatStore.getState().receiveMessage(message);
+    });
+    return () => {
+      if (typeof unsubscribe === 'function') unsubscribe();
+    };
+  }, []);
+
   const handleSendMessage = () => {
     if (!newMessage.trim()) return;
+
+    console.log('check new message', newMessage);
     
     try {
       sendChatMessage(newMessage);
@@ -108,6 +120,7 @@ const ChatInterface = ({ recipient }: ChatInterfaceProps) => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setNewMessage(e.target.value);
+
     // Notify recipient that user is typing
     if (!typingUsers.has(user?._id || '')) {
       startTyping();

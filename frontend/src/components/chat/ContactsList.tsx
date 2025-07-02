@@ -1,10 +1,17 @@
-import { Box, Flex, Input, InputGroup, InputLeftElement, Text } from '@chakra-ui/react';
-import { Avatar } from '@chakra-ui/avatar';
-import type { InputProps } from '@chakra-ui/react';
-import { FiSearch } from 'react-icons/fi';
-import { useState } from 'react';
-import useSocketStore from '../../stores/useSocketStore';
-import { User } from '../../types';
+import {
+  Box,
+  Flex,
+  Input,
+  InputGroup,
+  InputLeftElement,
+  Text,
+} from "@chakra-ui/react";
+import { Avatar } from "@chakra-ui/avatar";
+import type { InputProps } from "@chakra-ui/react";
+import { FiSearch } from "react-icons/fi";
+import { useState } from "react";
+import useSocketStore from "../../stores/useSocketStore";
+import { User } from "../../types";
 
 interface ContactsListProps {
   contacts: User[];
@@ -19,13 +26,11 @@ const ContactsList = ({
   onSelectContact,
   activeContactId,
 }: ContactsListProps) => {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   // Get presence information from the socket store
   const { isConnected, getUserPresence, onlineUsers } = useSocketStore();
-  
-  // Debug log online users
-  console.log('Online users:', onlineUsers);
 
+  console.log("Online users:", onlineUsers);
 
   const filteredContacts = contacts
     .filter((contact) => contact._id !== currentUser?._id)
@@ -38,19 +43,19 @@ const ContactsList = ({
     });
 
   return (
-    <Box 
-      w="100%" 
-      h="100%" 
+    <Box
+      w="100%"
+      h="100%"
       display="flex"
       flexDirection="column"
       overflow="hidden"
       bg="white"
     >
-      <Box 
-        p={4} 
-        borderBottom="1px" 
-        borderColor="gray.200" 
-        bg="white" 
+      <Box
+        p={4}
+        borderBottom="1px"
+        borderColor="gray.200"
+        bg="white"
         boxShadow="sm"
         flexShrink={0}
       >
@@ -62,42 +67,50 @@ const ContactsList = ({
             type="text"
             placeholder="Search contacts..."
             value={searchQuery}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setSearchQuery(e.target.value)
+            }
             bg="gray.50"
             border="1px"
             borderColor="gray.200"
-            _hover={{ 
-              borderColor: 'gray.300',
-              bg: 'white'
+            _hover={{
+              borderColor: "gray.300",
+              bg: "white",
             }}
             _focus={{
-              bg: 'white',
-              borderColor: 'blue.500',
-              boxShadow: '0 0 0 1px var(--chakra-colors-blue-500)',
+              bg: "white",
+              borderColor: "blue.500",
+              boxShadow: "0 0 0 1px var(--chakra-colors-blue-500)",
             }}
             borderRadius="md"
             pl={10}
-            _placeholder={{ color: 'gray.400' } as InputProps['_placeholder']}
+            _placeholder={{ color: "gray.400" } as InputProps["_placeholder"]}
             transition="all 0.2s"
           />
         </InputGroup>
       </Box>
 
       {/* Connection status indicator */}
-      <Flex px={4} py={2} bg="white" borderBottomWidth="1px" borderColor="gray.100">
+      <Flex
+        px={4}
+        py={2}
+        bg="white"
+        borderBottomWidth="1px"
+        borderColor="gray.100"
+      >
         <Flex align="center" gap={2}>
           <Box
             w={2}
             h={2}
             borderRadius="full"
-            bg={isConnected ? 'green.500' : 'red.500'}
+            bg={isConnected ? "green.500" : "red.500"}
           />
           <Text fontSize="sm" color="gray.500">
-            {isConnected ? 'Connected' : 'Disconnected'}
+            {isConnected ? "Connected" : "Disconnected"}
           </Text>
         </Flex>
       </Flex>
-      
+
       {/* Contacts list container */}
       <Box
         flex="1"
@@ -105,30 +118,29 @@ const ContactsList = ({
         bg="white"
         position="relative"
         css={{
-          '&::-webkit-scrollbar': {
-            width: '4px', // Make it thinner
-            height: '4px',
+          "&::-webkit-scrollbar": {
+            width: "4px",
+            height: "4px",
           },
-          '&::-webkit-scrollbar-track': {
-            background: 'transparent',
-            margin: '4px 0',
+          "&::-webkit-scrollbar-track": {
+            background: "transparent",
+            margin: "4px 0",
           },
-          '&::-webkit-scrollbar-thumb': {
-            background: 'rgba(0, 0, 0, 0.2)', // More subtle color
-            borderRadius: '4px',
-            '&:hover': {
-              background: 'rgba(0, 0, 0, 0.3)', // Slightly darker on hover
+          "&::-webkit-scrollbar-thumb": {
+            background: "rgba(0, 0, 0, 0.2)",
+            borderRadius: "4px",
+            "&:hover": {
+              background: "rgba(0, 0, 0, 0.3)",
             },
           },
-          // For Firefox
-          scrollbarWidth: 'thin',
-          scrollbarColor: 'rgba(0, 0, 0, 0.2) transparent',
+          scrollbarWidth: "thin",
+          scrollbarColor: "rgba(0, 0, 0, 0.2) transparent",
         }}
       >
         {searchQuery && filteredContacts.length === 0 ? (
-          <Flex 
-            h="100%" 
-            align="center" 
+          <Flex
+            h="100%"
+            align="center"
             justify="center"
             p={4}
             textAlign="center"
@@ -142,7 +154,7 @@ const ContactsList = ({
             const isOnline = presence?.isOnline || false;
             const isTyping = presence?.isTyping || false;
             const unreadCount = 0; // You can implement unread count logic here
-            
+
             return (
               <Flex
                 key={contact._id}
@@ -150,8 +162,8 @@ const ContactsList = ({
                 w="100%"
                 align="center"
                 cursor="pointer"
-                bg={activeContactId === contact._id ? 'blue.50' : 'white'}
-                _hover={{ bg: 'gray.50' }}
+                bg={activeContactId === contact._id ? "blue.50" : "white"}
+                _hover={{ bg: "gray.50" }}
                 onClick={() => onSelectContact(contact)}
                 borderBottom="1px"
                 borderColor="gray.100"
@@ -173,26 +185,27 @@ const ContactsList = ({
                 </Box>
                 <Box ml={3} flex={1} minW={0}>
                   <Flex direction="column" w="full">
-                    <Flex justify="space-between" align="center" w="full" gap={2}>
+                    <Flex
+                      justify="space-between"
+                      align="center"
+                      w="full"
+                      gap={2}
+                    >
                       <Text
                         fontWeight="500"
                         fontSize="sm"
                         noOfLines={1}
                         maxW="calc(100% - 50px)"
                       >
-                        {contact.name || contact.username || 'Unknown User'}
+                        {contact.name || contact.username || "Unknown User"}
                       </Text>
-                      <Text 
-                        fontSize="xs" 
-                        color="gray.500"
-                        whiteSpace="nowrap"
-                      >
-                        {contact.lastSeen ? (
-                          new Date(contact.lastSeen).toLocaleTimeString([], { 
-                            hour: '2-digit', 
-                            minute: '2-digit' 
-                          })
-                        ) : null}
+                      <Text fontSize="xs" color="gray.500" whiteSpace="nowrap">
+                        {contact.lastSeen
+                          ? new Date(contact.lastSeen).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })
+                          : null}
                       </Text>
                     </Flex>
                     <Flex align="center" gap={1} mt={0.5}>
@@ -201,10 +214,14 @@ const ContactsList = ({
                         color="gray.500"
                         noOfLines={1}
                         maxW="calc(100% - 24px)"
-                        title={contact.status || 'Offline'}
+                        title={contact.status || "Offline"}
                       >
                         <Flex align="center" gap={2}>
-                          <Box position="relative" display="inline-flex" alignItems="center">
+                          <Box
+                            position="relative"
+                            display="inline-flex"
+                            alignItems="center"
+                          >
                             {/* Online status dot */}
                             {isOnline && (
                               <Box
@@ -227,12 +244,16 @@ const ContactsList = ({
                               mr={2}
                             />
                           </Box>
-                          <Text 
-                            color={isOnline ? 'green.500' : 'gray.500'} 
+                          <Text
+                            color={isOnline ? "green.500" : "gray.500"}
                             fontSize="sm"
-                            fontWeight={isOnline ? 'medium' : 'normal'}
+                            fontWeight={isOnline ? "medium" : "normal"}
                           >
-                            {isTyping ? 'typing...' : (isOnline ? 'Online' : 'Offline')}
+                            {isTyping
+                              ? "typing..."
+                              : isOnline
+                              ? "Online"
+                              : "Offline"}
                           </Text>
                         </Flex>
                       </Text>
@@ -252,14 +273,14 @@ const ContactsList = ({
                           {unreadCount}
                         </Flex>
                       ) : (
-                        <Text 
-                          fontSize="xs" 
+                        <Text
+                          fontSize="xs"
                           color="gray.400"
                           ml={1}
                           fontStyle="italic"
                           whiteSpace="nowrap"
                         >
-                          @{contact.username || 'user'}
+                          @{contact.username || "user"}
                         </Text>
                       )}
                     </Flex>
@@ -270,7 +291,7 @@ const ContactsList = ({
           })
         ) : (
           <Flex h="100%" align="center" justify="center">
-            <span style={{ color: '#718096' }}>No contacts found</span>
+            <span style={{ color: "#718096" }}>No contacts found</span>
           </Flex>
         )}
       </Box>
