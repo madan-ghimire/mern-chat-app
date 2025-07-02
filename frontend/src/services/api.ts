@@ -1,5 +1,6 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import useAuthStore from '../stores/useAuthStore';
+import type { Chat } from '../types';
 
 const API_URL = 'http://localhost:5000/api';
 
@@ -90,12 +91,17 @@ export const usersApi = {
 export const messagesApi = {
   getMessages: (userId: string, params?: { page?: number; limit?: number }): Promise<{ messages: any[]; total: number }> =>
     api.get(`/messages/${userId}`, { params }),
-  sendMessage: (data: { to: string; content: string }): Promise<any> =>
+  sendMessage: (data: { chatId: string; content: string }): Promise<any> =>
     api.post('/messages', data),
   markAsRead: (messageId: string): Promise<void> =>
     api.put(`/messages/${messageId}/read`),
   deleteMessage: (messageId: string): Promise<void> =>
     api.delete(`/messages/${messageId}`),
+};
+
+// Chat API
+export const chatApi = {
+  accessChat: (userId: string): Promise<Chat> => api.post('/chat', { userId }),
 };
 
 export default api;

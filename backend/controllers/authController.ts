@@ -23,7 +23,7 @@ export const register = async (
     const { firstName, lastName, email, username, password, pic } =
       validationResult.data;
 
-    console.log('Original password during registration:', password);
+    console.log("Original password during registration:", password);
     const displayName = `${firstName} ${lastName}`;
 
     const userExists = await User.findOne({ email });
@@ -36,11 +36,13 @@ export const register = async (
       firstName,
       lastName,
       email,
-      password, 
+      password,
       displayName,
       username,
-      pic: pic || 'https://icon-library.com/images/anonymous-avatar-icon/anonymous-avatar-icon-25.jpg',
-      isAdmin: false
+      pic:
+        pic ||
+        "https://icon-library.com/images/anonymous-avatar-icon/anonymous-avatar-icon-25.jpg",
+      isAdmin: false,
     });
 
     return res.status(201).json({
@@ -54,7 +56,7 @@ export const register = async (
         pic: user.pic,
         isAdmin: user.isAdmin,
       },
-      token: generateToken(user._id.toString(), user.username, user.email)
+      token: generateToken(user._id.toString(), user.username, user.email),
     });
   } catch (error) {
     console.log(error);
@@ -76,7 +78,6 @@ export const login = async (req: Request, res: Response) => {
       });
     }
 
-
     const { email, password } = validationResult.data;
 
     const user = await User.findOne({ email });
@@ -85,16 +86,16 @@ export const login = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Invalid user credentials" });
     }
 
-    console.log("check user", user)
+    console.log("check user", user);
 
-    console.log('Password from login request:', password);
-    console.log('Stored hashed password:', user.password);
-    
+    console.log("Password from login request:", password);
+    console.log("Stored hashed password:", user.password);
+
     // Use the matchPassword method from the user model
     const isPasswordCorrect = await user.matchPassword(password);
-    
-    console.log('Password match result:', isPasswordCorrect);
-    
+
+    console.log("Password match result:", isPasswordCorrect);
+
     if (!isPasswordCorrect) {
       return res.status(400).json({ message: "Invalid email or password" });
     }
@@ -103,7 +104,7 @@ export const login = async (req: Request, res: Response) => {
       message: "Login successful",
       data: {
         isAdmin: user.isAdmin,
-        token: generateToken(user._id.toString(), user.username, user.email)
+        token: generateToken(user._id.toString(), user.username, user.email),
       },
     });
   } catch (error) {

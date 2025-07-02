@@ -4,6 +4,7 @@ import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { FiLogOut, FiUser, FiSettings } from 'react-icons/fi';
 import useAuthStore from '../../stores/useAuthStore';
 import { getUserFromToken } from '../../utils/auth';
+import useSocketStore from '../../stores/useSocketStore';
 
 interface TokenUser {
   id: string;
@@ -19,9 +20,13 @@ const Navbar = () => {
   const navigate = useNavigate();
   const bgColor = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.700');
-
   const { isOpen, onOpen, onClose } = useDisclosure();
   const cancelRef = useRef<HTMLButtonElement>(null);
+
+  // Move useSocketStore hook to the top
+  const { getUserPresence } = useSocketStore();
+  const presence = user ? getUserPresence(user.id) : undefined;
+  const isOnline = presence?.isOnline;
 
   useEffect(() => {
     const tokenUser = getUserFromToken();
@@ -96,6 +101,21 @@ const Navbar = () => {
                   src={user.avatar}
                   cursor="pointer"
                 />
+                {isOnline && (
+                  <Box
+                    as="span"
+                    display="inline-block"
+                    ml={-2}
+                    mb={2}
+                    w="10px"
+                    h="10px"
+                    bg="green.500"
+                    borderRadius="full"
+                    border="2px solid white"
+                    position="relative"
+                    zIndex={2}
+                  />
+                )}
               </Flex>
             </MenuButton>
             <MenuList>

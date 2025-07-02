@@ -1,5 +1,12 @@
-import { Box, Button, Container, Heading, Text, VStack } from '@chakra-ui/react';
-import { Link as RouterLink } from 'react-router-dom';
+import {
+  Box,
+  Button,
+  Container,
+  Heading,
+  Text,
+  VStack,
+} from "@chakra-ui/react";
+import { Link as RouterLink } from "react-router-dom";
 
 const NotFoundPage = () => {
   return (

@@ -1,47 +1,50 @@
-import { Box, Flex, useToast, Text } from '@chakra-ui/react';
-import { useEffect, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
-import { User } from '../types';
-import ContactsList from '../components/chat/ContactsList';
-import ChatInterface from '../components/chat/ChatInterface';
-import useAuthStore from '../stores/useAuthStore';
-import useSocketStore from '../stores/useSocketStore';
+import { Box, Flex, useToast, Text } from "@chakra-ui/react";
+import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
+import { User } from "../types";
+import ContactsList from "../components/chat/ContactsList";
+import ChatInterface from "../components/chat/ChatInterface";
+import useAuthStore from "../stores/useAuthStore";
+import useSocketStore from "../stores/useSocketStore";
+import { chatApi } from "../services/api";
+import useChatStore from "../stores/useChatStore";
 
 const ChatPage = () => {
   const { user } = useAuthStore();
   const [selectedContact, setSelectedContact] = useState<User | null>(null);
   const toast = useToast();
+  const setCurrentChat = useChatStore((state) => state.setCurrentChat);
 
   // Fetch user's contacts
   const { data: contacts = [], isLoading } = useQuery({
-    queryKey: ['contacts'],
+    queryKey: ["contacts"],
     queryFn: async () => {
       try {
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem("token");
         if (!token) {
-          throw new Error('No authentication token found');
+          throw new Error("No authentication token found");
         }
 
-        const response = await axios.get('/api/user', {
+        const response = await axios.get("/api/user", {
           headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
         });
 
         console.log("check contacts", response.data);
         return response.data;
-
       } catch (error: any) {
-        console.error('Failed to fetch contacts:', error);
+        console.error("Failed to fetch contacts:", error);
         toast({
-          title: 'Error',
-          description: error.response?.data?.message || 'Failed to load contacts',
-          status: 'error',
+          title: "Error",
+          description:
+            error.response?.data?.message || "Failed to load contacts",
+          status: "error",
           duration: 3000,
           isClosable: true,
-          position: 'bottom-right' as const
+          position: "bottom-right" as const,
         });
         return [];
       }
@@ -63,7 +66,7 @@ const ChatPage = () => {
     if (user && token) {
       useSocketStore.getState().connect(user._id, token);
     }
-    
+
     // Cleanup on unmount
     return () => {
       useSocketStore.getState().disconnect();
@@ -71,20 +74,51 @@ const ChatPage = () => {
   }, [user]);
 
   // Navbar height for proper layout calculation
-  const navbarHeight = '60px';
+  const navbarHeight = "60px";
+
+  // Handler to select a contact and ensure a chat exists
+  const handleSelectContact = async (contact: User) => {
+    try {
+      // Fetch or create chat between current user and selected contact
+      const chat = await chatApi.accessChat(contact._id);
+      console.log("Fetched/created chat:", chat);
+      if (!chat || !chat._id) {
+        toast({
+          title: "Error",
+          description: "Could not create or fetch chat.",
+          status: "error",
+          duration: 3000,
+          isClosable: true,
+          position: "bottom-right",
+        });
+        return;
+      }
+      setCurrentChat(chat._id);
+      setSelectedContact(contact);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to access chat",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+        position: "bottom-right",
+      });
+    }
+  };
 
   if (isLoading) {
     return (
-      <Flex 
-        h="100vh" 
-        align="center" 
+      <Flex
+        h="100vh"
+        align="center"
         justify="center"
         bg="gray.50"
         position="relative"
       >
-        <Box 
-          p={6} 
-          bg="white" 
+        <Box
+          p={6}
+          bg="white"
           borderRadius="lg"
           boxShadow="md"
           textAlign="center"
@@ -96,63 +130,50 @@ const ChatPage = () => {
   }
 
   return (
-    <Box 
-      h="100vh" 
-      w="100vw" 
-      overflow="hidden" 
-      bg="white"
-      position="relative"
-    >
+    <Box h="100vh" w="100vw" overflow="hidden" bg="white" position="relative">
       {/* Main content container */}
-      <Flex 
-        h={`calc(100vh - ${navbarHeight})`} 
+      <Flex
+        h={`calc(100vh - ${navbarHeight})`}
         mt={navbarHeight}
         position="relative"
       >
         {/* Sidebar with contacts */}
-        <Box 
-          w={{ base: '100%', md: '350px' }} 
-          h="100%" 
-          borderRight="1px" 
+        <Box
+          w={{ base: "100%", md: "350px" }}
+          h="100%"
+          borderRight="1px"
           borderColor="gray.200"
           bg="white"
-          display={{ base: selectedContact ? 'none' : 'flex', md: 'flex' }}
+          display={{ base: selectedContact ? "none" : "flex", md: "flex" }}
           flexDirection="column"
           position="relative"
-          boxShadow={{ base: 'none', md: 'sm' }}
+          boxShadow={{ base: "none", md: "sm" }}
           zIndex={1}
         >
           <ContactsList
             contacts={contacts}
             currentUser={user}
-            onSelectContact={setSelectedContact}
+            onSelectContact={handleSelectContact}
             activeContactId={selectedContact?._id}
           />
         </Box>
 
-        {/* Main chat area */}
-        <Box 
-          flex={1} 
+        <Box
+          flex={1}
           h="100%"
           bg="white"
-          display={{ base: selectedContact ? 'flex' : 'none', md: 'flex' }}
+          display={{ base: selectedContact ? "flex" : "none", md: "flex" }}
           flexDirection="column"
           position="relative"
-          borderLeft={{ base: 'none', md: '1px solid' }}
-          borderLeftColor={{ base: 'transparent', md: 'gray.200' }}
+          borderLeft={{ base: "none", md: "1px solid" }}
+          borderLeftColor={{ base: "transparent", md: "gray.200" }}
         >
           {selectedContact ? (
             <ChatInterface recipient={selectedContact} />
           ) : (
-            <Flex 
-              h="100%" 
-              align="center" 
-              justify="center" 
-              bg="gray.50"
-              p={4}
-            >
-              <Box 
-                textAlign="center" 
+            <Flex h="100%" align="center" justify="center" bg="gray.50" p={4}>
+              <Box
+                textAlign="center"
                 p={8}
                 bg="white"
                 borderRadius="lg"
@@ -166,12 +187,10 @@ const ChatPage = () => {
                 <Text color="gray.500" mb={4}>
                   Choose a contact from the list to begin your conversation
                 </Text>
-                <Text 
-                  fontSize="sm" 
-                  color="gray.400" 
-                  fontStyle="italic"
-                >
-                  {contacts.length === 0 ? 'No contacts available' : `${contacts.length} contacts`}
+                <Text fontSize="sm" color="gray.400" fontStyle="italic">
+                  {contacts.length === 0
+                    ? "No contacts available"
+                    : `${contacts.length} contacts`}
                 </Text>
               </Box>
             </Flex>

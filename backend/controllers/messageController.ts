@@ -1,9 +1,9 @@
-import { Response, Request } from 'express';
-import { IUser } from '../models/userModel';
-import Message, { IMessage, IPopulatedMessage } from '../models/message';
-import Chat from '../models/chatModel';
-import { getSocketManager } from '../socket/socketManager';
-import { Types } from 'mongoose';
+import { Response, Request } from "express";
+import { IUser } from "../models/userModel";
+import Message, { IMessage, IPopulatedMessage } from "../models/message";
+import Chat from "../models/chatModel";
+import { getSocketManager } from "../socket/socketManager";
+import { Types } from "mongoose";
 
 // Extend Express Request type to include user
 declare global {
@@ -14,7 +14,6 @@ declare global {
   }
 }
 
-
 // @desc    Send a new message
 // @route   POST /api/messages
 // @access  Protected
@@ -24,21 +23,25 @@ export const sendMessage = async (req: Request, res: Response) => {
     const user = req.user;
 
     if (!content || !chatId) {
-      return res.status(400).json({ message: 'Content and chat ID are required' });
+      return res
+        .status(400)
+        .json({ message: "Content and chat ID are required" });
     }
 
     if (!user) {
-      return res.status(401).json({ message: 'User not authenticated' });
+      return res.status(401).json({ message: "User not authenticated" });
     }
-    
+
     // Validate chat exists and user is a participant
     const chat = await Chat.findById(chatId);
     if (!chat) {
-      return res.status(404).json({ message: 'Chat not found' });
+      return res.status(404).json({ message: "Chat not found" });
     }
-    
-    if (!chat.users.some(u => u.toString() === user._id.toString())) {
-      return res.status(403).json({ message: 'Not authorized to send messages to this chat' });
+
+    if (!chat.users.some((u) => u.toString() === user._id.toString())) {
+      return res
+        .status(403)
+        .json({ message: "Not authorized to send messages to this chat" });
     }
 
     // Create new message
@@ -49,25 +52,25 @@ export const sendMessage = async (req: Request, res: Response) => {
     });
 
     // Populate the message with sender and chat details
-    const populatedMessage = await Message.findById(newMessage._id)
-      .populate<{ sender: IUser }>('sender', 'firstName lastName pic')
+    const populatedMessage = (await Message.findById(newMessage._id)
+      .populate<{ sender: IUser }>("sender", "firstName lastName pic")
       .populate({
-        path: 'chat',
+        path: "chat",
         populate: {
-          path: 'users',
-          select: 'firstName lastName pic email',
+          path: "users",
+          select: "firstName lastName pic email",
         },
       })
       .lean()
-      .exec() as unknown as IPopulatedMessage;
+      .exec()) as unknown as IPopulatedMessage;
 
     if (!populatedMessage) {
-      throw new Error('Failed to create message');
+      throw new Error("Failed to create message");
     }
 
     // Update latest message in chat
-    await Chat.findByIdAndUpdate(chatId, { 
-      latestMessage: populatedMessage._id 
+    await Chat.findByIdAndUpdate(chatId, {
+      latestMessage: populatedMessage._id,
     });
 
     // Prepare message for socket emission - use the ID only for the chat field as per IMessage interface
@@ -77,7 +80,7 @@ export const sendMessage = async (req: Request, res: Response) => {
       content: populatedMessage.content,
       chat: populatedMessage.chat._id,
       createdAt: populatedMessage.createdAt || new Date(),
-      updatedAt: populatedMessage.updatedAt || new Date()
+      updatedAt: populatedMessage.updatedAt || new Date(),
     };
 
     // Emit socket event
@@ -86,9 +89,9 @@ export const sendMessage = async (req: Request, res: Response) => {
 
     return res.status(201).json(populatedMessage);
   } catch (error: any) {
-    console.error('Error in sendMessage:', error);
-    return res.status(500).json({ 
-      message: error.message || 'An error occurred while sending message' 
+    console.error("Error in sendMessage:", error);
+    return res.status(500).json({
+      message: error.message || "An error occurred while sending message",
     });
   }
 };
@@ -102,13 +105,13 @@ export const getMessages = async (req: Request, res: Response) => {
     const user = req.user;
 
     if (!chatId) {
-      return res.status(400).json({ message: 'Chat ID is required' });
+      return res.status(400).json({ message: "Chat ID is required" });
     }
 
     if (!user) {
-      return res.status(401).json({ message: 'User not authenticated' });
+      return res.status(401).json({ message: "User not authenticated" });
     }
-    
+
     // Check if user is part of the chat
     const userChat = await Chat.findOne({
       _id: chatId,
@@ -116,20 +119,22 @@ export const getMessages = async (req: Request, res: Response) => {
     });
 
     if (!userChat) {
-      return res.status(403).json({ message: 'Not authorized to access these messages' });
+      return res
+        .status(403)
+        .json({ message: "Not authorized to access these messages" });
     }
 
     const messages = await Message.find({ chat: chatId })
-      .populate('sender', 'firstName lastName pic email')
+      .populate("sender", "firstName lastName pic email")
       .sort({ createdAt: 1 })
       .lean()
       .exec();
 
     return res.status(200).json(messages);
   } catch (error: any) {
-    console.error('Error in getMessages:', error);
-    return res.status(500).json({ 
-      message: error.message || 'An error occurred while fetching messages' 
+    console.error("Error in getMessages:", error);
+    return res.status(500).json({
+      message: error.message || "An error occurred while fetching messages",
     });
   }
 };
